@@ -2,6 +2,7 @@
 #include <vector>
 #include <ncurses.h>
 #include <cstdlib>
+#include <time.h>
 #ifndef SNAKE_H
 #define SNAKE_H
 struct snakepart{
@@ -10,19 +11,22 @@ struct snakepart{
 	snakepart();
 };
 class snakeclass{
+    time_t Gstart, Pstart, Gend,Pend;
 	char direction;
-
+    bool gget;
+    bool pget;
 	int maxwidth;
 	int maxheight;
 	char partchar;
 	char oldalchar;
-    snakepart food;
+    snakepart growth;
     snakepart poison;
-	char f_item;
+	char g_item;
 	char p_item;
 	bool failed;
 	std::vector<snakepart> snake;
-    void putfood();
+    void putgrowth();
+    void putpoison();
 	void movesnake();
 	bool collision();
 public:

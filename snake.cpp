@@ -1,5 +1,6 @@
 #include "snake.h"
 #include <unistd.h>
+#include <time.h>
 using namespace std;
 snakepart::snakepart(int col,int row)
 {
@@ -22,13 +23,21 @@ snakeclass::snakeclass()
 	getmaxyx(stdscr,maxheight,maxwidth);
 	partchar='@';
 	oldalchar=(char)219;
-	f_item = 'F';
+	g_item = 'G';
 	p_item = 'P';
-
+    growth.x =0;
+    growth.y =0;
+    poison.x =0;
+    poison.y=0;
 	failed=false;
 	for(int i=0;i<5;i++)
 		snake.push_back(snakepart(40+i,10));
+	gget=0;
+	pget=0;
+
 	direction='l';
+	putgrowth();
+	putpoison();
 	//윗벽 생성
 	for(int i=0;i<maxwidth-1;i++)
 	{
@@ -69,6 +78,46 @@ snakeclass::~snakeclass()
 	endwin();
 }
 
+void snakeclass::putgrowth()
+{
+    while(1)
+    {
+        int tmpx=rand()%maxwidth+1;
+        int tmpy=rand()%maxheight+1;
+        for(int i=0;i<snake.size();i++)
+            if(snake[i].x==tmpx && snake[i].y==tmpy)
+                continue;
+        if(tmpx>=maxwidth-2 || tmpy>=maxheight-3)
+            continue;
+        growth.x=tmpx;
+        growth.y=tmpy;
+        break;
+    }
+    move(growth.y,growth.x);
+    addch(g_item);
+    Gstart = time(NULL);
+    refresh();
+}
+void snakeclass::putpoison()
+{
+    while(1)
+    {
+        int tmpx=rand()%maxwidth+1;
+        int tmpy=rand()%maxheight+1;
+        for(int i=0;i<snake.size();i++)
+            if(snake[i].x==tmpx && snake[i].y==tmpy)
+                continue;
+        if(tmpx>=maxwidth-2 || tmpy>=maxheight-3)
+            continue;
+        poison.x=tmpx;
+        poison.y=tmpy;
+        break;
+    }
+    move(poison.y,poison.x);
+    addch(p_item);
+    Pstart = time(NULL);
+    refresh();
+}
 
 bool snakeclass::collision()
 {
@@ -79,7 +128,36 @@ bool snakeclass::collision()
 		if(snake[0].x==snake[i].x && snake[0].y==snake[i].y)
 			return true;
 	}
-	
+	Gend=time(NULL);
+    if(snake[0].x==growth.x && snake[0].y==growth.y)
+    {
+        gget=true;
+        putgrowth();
+    }else if(Gend-Gstart>7)
+    {
+        move(growth.y, growth.x);
+        printw(" ");
+        refresh();
+        putgrowth();
+        gget=false;
+    }
+    else
+        gget=false;
+    Pend=time(NULL);
+    if(snake[0].x==poison.x && snake[0].y==poison.y)
+    {
+        pget=true;
+        putpoison();
+    }else if(Pend-Pstart>7)
+    {
+        move(poison.y, poison.x);
+        printw(" ");
+        refresh();
+        putpoison();
+        pget=false;
+    }else
+        pget=false;
+    return false;
 	
 }
 
@@ -117,11 +195,23 @@ void snakeclass::movesnake()
 		
 	}
 
-	move(snake[snake.size()-1].y,snake[snake.size()-1].x);
-	printw(" ");
-	refresh();
-	snake.pop_back();
-	
+	if(!gget) {
+        move(snake[snake.size() - 1].y, snake[snake.size() - 1].x);
+        printw(" ");
+        refresh();
+        snake.pop_back();
+    }
+	if(pget)
+    {
+        move(snake[snake.size() - 1].y, snake[snake.size() - 1].x);
+        printw(" ");
+        refresh();
+        snake.pop_back();
+        if(snake.size()<2)
+        {
+            failed=true;
+        }
+    }
 	if(direction=='l')
 	{
 		snake.insert(snake.begin(),snakepart(snake[0].x-1,snake[0].y));
@@ -150,6 +240,6 @@ void snakeclass::start()
 			break;
 		}
 		movesnake();
-		usleep(200000);
+		usleep(150000);
 	}
 }
